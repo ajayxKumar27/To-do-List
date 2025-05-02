@@ -10,13 +10,15 @@
 <body>
     <div class="main-wrapper">
         <div class="container">
-            <h1 class="text-center">To-Do List</h1>
-            <div class="input-group mb-3">
-                <input type="text" id="task-input" class="form-control" placeholder="Enter a new task" aria-label="Task">
+            <h1 class="text-center mb-3">To-Do List</h1>
+            <div class="input-group mb-5">
+                <input type="text" id="task-input" class="form-control " placeholder="Enter a new task" aria-label="Task">
                 <div class="input-group-append">
                     <button class="btn btn-primary" id="add-task-button">Add Task</button>
                 </div>
             </div>
+            <p id="empty-state-message" class="text-muted text-center mt-3">No tasks yet. Try adding one!</p>
+
             <ul id="task-list" class="list-group">
                 <!-- Task items will be added here dynamically -->
             </ul>

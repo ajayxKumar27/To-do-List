@@ -2,6 +2,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const taskInput = document.getElementById('task-input');
     const addButton = document.getElementById('add-task-button');
     const taskListContainer = document.getElementById('task-list');
+    const emptyStateMessage = document.getElementById('empty-state-message');
     let taskBeingEdited = null;
 
     initializeApp();
@@ -14,14 +15,20 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     taskListContainer.addEventListener('click', handleTaskButtonClick);
 
+    
     function initializeApp() {
         const savedTasks = getTasksFromStorage();
         savedTasks.forEach(({ id, text }) => {
             const taskElement = buildTaskElement(id, text);
             taskListContainer.appendChild(taskElement);
         });
+        toggleEmptyStateMessage(); 
     }
-
+    
+    function toggleEmptyStateMessage() {
+        const hasTasks = taskListContainer.querySelectorAll('li').length > 0;
+        emptyStateMessage.style.display = hasTasks ? 'none' : 'block';
+    }
     function handleAddOrUpdateTask() {
         const taskText = taskInput.value.trim();
         if (!taskText) {
@@ -56,6 +63,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (target.classList.contains('delete-button')) {
             listItem.remove();
             removeTaskFromStorage(taskId);
+            toggleEmptyStateMessage();
             if (taskBeingEdited === listItem) {
                 resetForm();
             }
@@ -67,6 +75,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const newTaskElement = buildTaskElement(taskId, text);
         taskListContainer.appendChild(newTaskElement);
         saveTaskToStorage(taskId, text);
+        toggleEmptyStateMessage();
     }
 
     function updateTask(taskElement, newText) {

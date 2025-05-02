@@ -23,8 +23,12 @@ h1 {
     
 }
 .list-group{
-    max-height: 60vh;
+    max-height: 57vh;
     overflow: auto;
+}
+#empty-state-message {
+    font-style: italic;
+    color: #888;
 }
 .list-group-item {
     width: 100%;
