@@ -1,99 +1,128 @@
-// JavaScript logic for the To-Do List application with local storage
-
-document.addEventListener('DOMContentLoaded', function () {
+document.addEventListener('DOMContentLoaded', () => {
     const taskInput = document.getElementById('task-input');
-    const addTaskButton = document.getElementById('add-task-button');
-    const taskList = document.getElementById('task-list');
-    let editMode = null; // To track the task being edited
+    const addButton = document.getElementById('add-task-button');
+    const taskListContainer = document.getElementById('task-list');
+    let taskBeingEdited = null;
 
-    // Load tasks from local storage on page load
-    loadTasksFromLocalStorage();
+    initializeApp();
 
-    addTaskButton.addEventListener('click', addTask);
-    taskList.addEventListener('click', handleTaskActions);
+    addButton.addEventListener('click', handleAddOrUpdateTask);
+    taskInput.addEventListener('keydown', event => {
+        if (event.key === 'Enter') {
+            handleAddOrUpdateTask();
+        }
+    });
+    taskListContainer.addEventListener('click', handleTaskButtonClick);
 
-    function addTask() {
+    function initializeApp() {
+        const savedTasks = getTasksFromStorage();
+        savedTasks.forEach(({ id, text }) => {
+            const taskElement = buildTaskElement(id, text);
+            taskListContainer.appendChild(taskElement);
+        });
+    }
+
+    function handleAddOrUpdateTask() {
         const taskText = taskInput.value.trim();
-        if (taskText === '') {
+        if (!taskText) {
             alert('Please enter a task.');
             return;
         }
 
-        if (editMode) {
-            // Update the existing task
-            editMode.querySelector('.task-text').textContent = taskText;
-            updateTaskInLocalStorage(editMode.dataset.id, taskText);
-            editMode = null; // Exit edit mode
-            addTaskButton.textContent = 'Add Task'; // Reset button text
+        if (taskBeingEdited) {
+            updateTask(taskBeingEdited, taskText);
         } else {
-            // Add a new task
-            const taskId = Date.now().toString(); // Unique ID for the task
-            const listItem = createTaskElement(taskId, taskText);
-            taskList.appendChild(listItem);
-            saveTaskToLocalStorage(taskId, taskText);
+            addNewTask(taskText);
         }
 
-        taskInput.value = ''; // Clear the input field
+        resetForm();
     }
 
-    function handleTaskActions(event) {
-        if (event.target.classList.contains('delete-button')) {
-            // Delete the task
-            const listItem = event.target.closest('li');
-            const taskId = listItem.dataset.id;
+    function handleTaskButtonClick(event) {
+        const target = event.target;
+        const listItem = target.closest('li');
+
+        if (!listItem) return;
+
+        const taskId = listItem.dataset.id;
+
+        if (target.classList.contains('edit-button')) {
+            taskInput.value = listItem.querySelector('.task-text').textContent;
+            taskBeingEdited = listItem;
+            addButton.textContent = 'Update Task';
+            taskInput.focus();
+        }
+
+        if (target.classList.contains('delete-button')) {
             listItem.remove();
-            deleteTaskFromLocalStorage(taskId);
-        } else if (event.target.classList.contains('edit-button')) {
-            // Edit the task
-            const listItem = event.target.closest('li');
-            const taskText = listItem.querySelector('.task-text').textContent.trim();
-            taskInput.value = taskText; // Populate the input field with the task text
-            editMode = listItem; // Set the current task in edit mode
-            addTaskButton.textContent = 'Update Task'; // Change button text to "Update Task"
+            removeTaskFromStorage(taskId);
+            if (taskBeingEdited === listItem) {
+                resetForm();
+            }
         }
     }
 
-    function createTaskElement(taskId, taskText) {
-        const listItem = document.createElement('li');
-        listItem.className = 'list-group-item d-flex justify-content-between align-items-center';
-        listItem.dataset.id = taskId; // Store the task ID in a data attribute
-        listItem.innerHTML = `
-            <span class="task-text">${taskText}</span>
-            <div>
+    function addNewTask(text) {
+        const taskId = Date.now().toString();
+        const newTaskElement = buildTaskElement(taskId, text);
+        taskListContainer.appendChild(newTaskElement);
+        saveTaskToStorage(taskId, text);
+    }
+
+    function updateTask(taskElement, newText) {
+        const taskId = taskElement.dataset.id;
+        taskElement.querySelector('.task-text').textContent = newText;
+        updateTaskInStorage(taskId, newText);
+        taskBeingEdited = null;
+        addButton.textContent = 'Add Task';
+    }
+
+    function resetForm() {
+        taskInput.value = '';
+        taskBeingEdited = null;
+        addButton.textContent = 'Add Task';
+    }
+
+    function buildTaskElement(id, text) {
+        const li = document.createElement('li');
+        li.className = 'list-group-item';
+        li.dataset.id = id;
+        li.innerHTML = `
+            <span class="task-text">${text}</span>
+            <div class="button-box">
                 <button class="btn btn-warning btn-sm edit-button">Edit</button>
                 <button class="btn btn-danger btn-sm delete-button">Delete</button>
             </div>
         `;
-        return listItem;
+        return li;
     }
 
-    // Local Storage Functions
-    function saveTaskToLocalStorage(taskId, taskText) {
-        const tasks = JSON.parse(localStorage.getItem('tasks')) || [];
-        tasks.push({ id: taskId, text: taskText });
+    function getTasksFromStorage() {
+        try {
+            return JSON.parse(localStorage.getItem('tasks')) || [];
+        } catch {
+            return [];
+        }
+    }
+
+    function saveTaskToStorage(id, text) {
+        const tasks = getTasksFromStorage();
+        tasks.push({ id, text });
         localStorage.setItem('tasks', JSON.stringify(tasks));
     }
 
-    function updateTaskInLocalStorage(taskId, updatedText) {
-        const tasks = JSON.parse(localStorage.getItem('tasks')) || [];
-        const taskIndex = tasks.findIndex(task => task.id === taskId);
-        if (taskIndex !== -1) {
-            tasks[taskIndex].text = updatedText;
+    function updateTaskInStorage(id, newText) {
+        const tasks = getTasksFromStorage();
+        const taskIndex = tasks.findIndex(task => task.id === id);
+        if (taskIndex > -1) {
+            tasks[taskIndex].text = newText;
             localStorage.setItem('tasks', JSON.stringify(tasks));
         }
     }
 
-    function deleteTaskFromLocalStorage(taskId) {
-        const tasks = JSON.parse(localStorage.getItem('tasks')) || [];
-        const updatedTasks = tasks.filter(task => task.id !== taskId);
+    function removeTaskFromStorage(id) {
+        const tasks = getTasksFromStorage();
+        const updatedTasks = tasks.filter(task => task.id !== id);
         localStorage.setItem('tasks', JSON.stringify(updatedTasks));
-    }
-
-    function loadTasksFromLocalStorage() {
-        const tasks = JSON.parse(localStorage.getItem('tasks')) || [];
-        tasks.forEach(task => {
-            const listItem = createTaskElement(task.id, task.text);
-            taskList.appendChild(listItem);
-        });
     }
 });
