@@ -23,7 +23,7 @@ h1 {
     
 }
 .list-group{
-    max-height: 57vh;
+    max-height: 70%;
     overflow: auto;
 }
 #empty-state-message {
